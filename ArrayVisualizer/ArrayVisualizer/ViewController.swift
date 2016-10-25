@@ -13,7 +13,8 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        testQuicksort()
+        //testQuicksort()
+        testArray2D()
         let v = Visualizer()
         let array = [1,2,3]
         v.observe(array)

@@ -75,14 +75,18 @@ class DrawKit {
     }
     
     internal func drawObjectDescriptions(_ array: Array<Any?>, _ xPos:Double) {
-        let paragraphStyle = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
-        paragraphStyle.lineBreakMode = NSLineBreakMode.byTruncatingTail
-        let textFontAttributes: [String: Any] = [NSFontAttributeName: UIFont.boldSystemFont(ofSize: CGFloat(properties.currentFontHeight)), NSForegroundColorAttributeName: properties.currentColor, NSParagraphStyleAttributeName: paragraphStyle]
         for i in 0..<array.count {
             let y = Double(i) * properties.currentItemHeight
             let desc = objectDescription(array[i] as AnyObject?)
-            desc.draw(at: CGPoint(x: CGFloat(xPos), y: CGFloat(y)), withAttributes: textFontAttributes)
+            desc.draw(at: CGPoint(x: CGFloat(xPos), y: CGFloat(y)), withAttributes: attributes())
         }
+    }
+    
+    internal func attributes() -> [String: Any] {
+        let paragraphStyle = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
+        paragraphStyle.lineBreakMode = NSLineBreakMode.byTruncatingTail
+        let textFontAttributes: [String: Any] = [NSFontAttributeName: UIFont.boldSystemFont(ofSize: CGFloat(properties.currentFontHeight)), NSForegroundColorAttributeName: properties.currentColor, NSParagraphStyleAttributeName: paragraphStyle]
+        return textFontAttributes
     }
     
     fileprivate func arrayHasNumber(_ array: Array<Any?>)->Bool {
@@ -129,6 +133,41 @@ class DrawKit {
             let y = Double(i) * properties.currentItemHeight
             drawLine(0, y0: y, x1: viewWidth, y1: y)
         }
+    }
+    
+    func render2D(_ array2D:Array<Array<Any?>>?) -> UIImage {
+        guard let array2D = array2D else {
+            return UIImage()
+        }
+        let height = array2D.count
+        let viewWidth = 400.0
+        if height > 0 {
+            let firstRow = array2D[0]
+            let width = array2D.count
+            let widthPerCell = viewWidth / Double(width)
+            let size = CGSize(width: CGFloat(viewWidth),height: CGFloat(Double(height)*properties.currentFontHeight))
+            UIGraphicsBeginImageContextWithOptions(size, true, 0)
+            UIColor.black.setFill()
+            UIRectFill(CGRect(x: 0, y: 0, width: size.width, height: size.height))
+            for x in 0..<array2D.count {
+                for y in 0..<array2D[x].count {
+                    if let value = array2D[x][y] as? Int {
+                        let alpha = Double(value) / 40.0
+                        let color = UIColor(red: 106.0/255.0, green: 172.0/255.0, blue: 218.0/255.0, alpha: CGFloat(alpha))
+                        let x0 = Double(x) * widthPerCell
+                        let y0 = Double(y) * properties.currentFontHeight
+                        color.setFill()
+                        print("\(x0) \(y0)")
+                        UIRectFill(CGRect(x:CGFloat(x0), y:CGFloat(y0), width:CGFloat(widthPerCell-1), height:CGFloat(properties.currentFontHeight)))
+                        let desc = "\(value)"
+                        desc.draw(at: CGPoint(x:CGFloat(x0), y:CGFloat(y0)), withAttributes: attributes())
+                    }
+                }
+            }
+        }
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return image ?? UIImage()
     }
     
     func render(_ array:Array<Any?>?) -> UIImage {

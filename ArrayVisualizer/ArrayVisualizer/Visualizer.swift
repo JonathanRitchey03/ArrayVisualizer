@@ -7,14 +7,30 @@ import Foundation
 
 class Visualizer: NSObject {
     var array: Array<Any?>?
+    var array2D: Array<Array<Any?>>?
+    
     var drawKit = DrawKit()
     
     func observe(_ array: Array<Any?>) {
         self.array = array
     }
+    
+    func observe2D(_ array2D: Array<Array<Any?>>) {
+        self.array2D = array2D
+    }
+    
+    func look() {
         
+    }
+    
     open func debugQuickLookObject() -> AnyObject? {
-        return drawKit.render(array)
+        if let _ = array {
+            return drawKit.render(array)
+        }
+        if let _ = array2D {
+            return drawKit.render2D(array2D)
+        }
+        return nil
     }
 }
 
@@ -25,6 +41,21 @@ func testQuicksort() {
         array.append(-10 + Int(arc4random() % 30))
     }
     quicksort(&array, lo: 0, hi: array.count - 1)
+}
+
+func testArray2D() {
+    var array2D: [[Int]] = [[]]
+    for _ in 0..<10 {
+        var row: [Int] = []
+        for _ in 0..<10 {
+            row.append(-10 + Int(arc4random() % 30))
+        }
+        array2D.append(row)
+    }
+    let v = Visualizer()
+    v.observe2D(array2D)
+    v.look()
+    print("")
 }
 
 func quicksort(_ array: inout Array<Int>, lo: Int, hi: Int) {
