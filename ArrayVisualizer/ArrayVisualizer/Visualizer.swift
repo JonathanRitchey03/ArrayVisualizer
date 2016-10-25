@@ -45,10 +45,10 @@ func testQuicksort() {
 
 func testArray2D() {
     var array2D: [[Int]] = [[]]
-    for _ in 0..<10 {
+    for _ in 0..<30 {
         var row: [Int] = []
-        for _ in 0..<10 {
-            row.append(-10 + Int(arc4random() % 30))
+        for _ in 0..<30 {
+            row.append(-99 + Int(arc4random() % 200))
         }
         array2D.append(row)
     }

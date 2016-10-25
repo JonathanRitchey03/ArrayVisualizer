@@ -31,7 +31,13 @@ class DrawKit {
             let size : CGSize = string.size(attributes: [NSFontAttributeName: UIFont.systemFont(ofSize: CGFloat(currentFontHeight))])
             return Double(size.width)
         }
+        class Array2D {
+            var cellWidth = CGFloat(30)
+            var cellHeight = CGFloat(12)
+        }
+        var array2D = Array2D()
     }
+    
     let properties = Properties()
     
     class Utils {
@@ -135,36 +141,109 @@ class DrawKit {
         }
     }
     
+    func dimensions(_ array2D: Array<Array<Any?>>) -> CGSize {
+        let width = CGFloat(array2D.count) * properties.array2D.cellWidth
+        let height = CGFloat(maxLength(array2D)) * properties.array2D.cellHeight
+        return CGSize(width: width, height: height)
+    }
+    
+    func maxLength(_ array2D: Array<Array<Any?>>) -> Int {
+        var maxHeight = 0
+        for column in array2D {
+            maxHeight = max(maxHeight, column.count)
+        }
+        return maxHeight
+    }
+    
+    func minValue(for array2D: Array<Array<Any?>>) -> Int {
+        guard array2D.count > 0 else {
+            print("minValue exit early 0")
+            return 0
+        }
+        var minValue = Int.max
+        for x in 0..<array2D.count {
+            for y in 0..<array2D[x].count {
+                let value = val(array2D, x: x, y: y)
+                minValue = min(minValue, value)
+            }
+        }
+        return minValue
+    }
+    
+    func val(_ array2D: Array<Array<Any?>>, x: Int, y: Int) -> Int {
+        let value: Int? = array2D[x][y] as? Int
+        return value ?? 0
+    }
+    
+    func limitValue(for array2D: Array<Array<Any?>>, isMax: Bool) -> Int {
+        guard array2D.count > 0 else {
+            print("maxValue exit early 0")
+            return 0
+        }
+        var limitValue = isMax ? Int.min : Int.max
+        for x in 0..<array2D.count {
+            for y in 0..<array2D[x].count {
+                if let value = array2D[x][y] as? Int {
+                    limitValue = isMax ? max(limitValue, value) : min(limitValue, value)
+                }
+            }
+        }
+        return limitValue
+    }
+    
+    func color(for array2D: Array<Array<Any?>>, x: Int, y: Int, min: Int, max: Int) -> UIColor {
+        let val = array2D[x][y] as? Int ?? 0
+        var alpha = CGFloat(0)
+        var color = UIColor()
+        if val < 0 {
+            alpha = CGFloat(-val) / CGFloat(-min)
+            //print("\(alpha)")
+            color = UIColor(red: 0.5, green: 0, blue: 0, alpha: alpha)
+        } else {
+            alpha = CGFloat(val) / CGFloat(max)
+            //print("\(alpha)")
+            color = UIColor(red: 106.0/255.0, green: 172.0/255.0, blue: 218.0/255.0, alpha: alpha)
+        }
+        return color
+    }
+    
+    func drawCell(for array2D: Array<Array<Any?>>, x: Int, y: Int, min: Int, max: Int, size: CGSize) {
+        let width = array2D.count
+        let widthPerCell = size.width / CGFloat(width)
+        let cellSize = CGSize(width: widthPerCell, height: properties.array2D.cellHeight)
+
+        let x0 = CGFloat(x) * widthPerCell
+        let y0 = CGFloat(y) * properties.array2D.cellHeight
+        let color = self.color(for: array2D, x: x, y: y, min: min, max: max)
+        color.setFill()
+        UIRectFill(CGRect(x: x0, y: y0, width: cellSize.width, height: cellSize.height))
+        let value = array2D[x][y] as? Int ?? 0
+        let desc = "\(value)"
+        desc.draw(at: CGPoint(x: x0, y: y0), withAttributes: attributes())
+    }
+    
     func render2D(_ array2D:Array<Array<Any?>>?) -> UIImage {
         guard let array2D = array2D else {
             return UIImage()
         }
-        let height = array2D.count
-        let viewWidth = 400.0
-        if height > 0 {
-            let firstRow = array2D[0]
-            let width = array2D.count
-            let widthPerCell = viewWidth / Double(width)
-            let size = CGSize(width: CGFloat(viewWidth),height: CGFloat(Double(height)*properties.currentFontHeight))
-            UIGraphicsBeginImageContextWithOptions(size, true, 0)
-            UIColor.black.setFill()
-            UIRectFill(CGRect(x: 0, y: 0, width: size.width, height: size.height))
-            for x in 0..<array2D.count {
-                for y in 0..<array2D[x].count {
-                    if let value = array2D[x][y] as? Int {
-                        let alpha = Double(value) / 40.0
-                        let color = UIColor(red: 106.0/255.0, green: 172.0/255.0, blue: 218.0/255.0, alpha: CGFloat(alpha))
-                        let x0 = Double(x) * widthPerCell
-                        let y0 = Double(y) * properties.currentFontHeight
-                        color.setFill()
-                        print("\(x0) \(y0)")
-                        UIRectFill(CGRect(x:CGFloat(x0), y:CGFloat(y0), width:CGFloat(widthPerCell-1), height:CGFloat(properties.currentFontHeight)))
-                        let desc = "\(value)"
-                        desc.draw(at: CGPoint(x:CGFloat(x0), y:CGFloat(y0)), withAttributes: attributes())
-                    }
-                }
+        let height = maxLength(array2D)
+        guard height > 0 else {
+            return UIImage()
+        }
+
+        let size = dimensions(array2D)
+        UIGraphicsBeginImageContextWithOptions(size, true, 0)
+        UIColor.black.setFill()
+        UIRectFill(CGRect(x: 0, y: 0, width: size.width, height: size.height))
+        
+        let min = limitValue(for: array2D, isMax: false)
+        let max = limitValue(for: array2D, isMax: true)
+        for x in 0..<array2D.count {
+            for y in 0..<array2D[x].count {
+                drawCell(for: array2D, x: x, y: y, min: min, max: max, size: size)
             }
         }
+        
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         return image ?? UIImage()
